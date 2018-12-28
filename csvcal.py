@@ -27,9 +27,17 @@ def usage():
 
 
 def to_csv(output_file, input_file):
-    calendar = Calendar.from_ical(input_file.read())
+    try:
+        calendar = Calendar.from_ical(input_file.read())
+    except ValueError as e:
+        handle_parse_error(e)
     property_names = create_properties_map(calendar).keys()
     write_events_to_csv(output_file, calendar, property_names)
+
+
+def handle_parse_error(e):
+    print('failed to parse input: {}'.format(str(e)))
+    sys.exit(1)
 
 
 def create_properties_map(calendar):
@@ -78,9 +86,21 @@ def to_ics(output_file, input_file):
     for row in reader:
         event = Event()
         for name, value in row.items():
+            check_csv(value)
             event[name] = unescape(value)
         calendar.add_component(event)
     output_file.write(calendar.to_ical().replace(b'\r', b'').decode('UTF-8'))
+
+
+def check_csv(value):
+    """Exit if input is not an instance of ``str``
+
+    If value is not an instance of ``str``, the input was not valid CSV.
+    """
+
+    if not isinstance(value, str):
+        print('input is not valid CSV', file=sys.stderr)
+        sys.exit(1)
 
 
 def unescape(value):
