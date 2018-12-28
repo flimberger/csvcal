@@ -75,9 +75,13 @@ def to_ics(output_file, input_file):
     for row in reader:
         event = Event()
         for name, value in row.items():
-            event[name] = value
+            event[name] = unescape(value)
         calendar.add_component(event)
     output_file.write(calendar.to_ical().replace(b'\r', b'').decode('UTF-8'))
+
+
+def unescape(value):
+    return value.replace('\\', '')
 
 
 if __name__ == '__main__':
