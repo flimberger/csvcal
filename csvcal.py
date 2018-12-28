@@ -3,7 +3,7 @@
 import sys
 
 from csv import DictReader, writer as CSVWriter
-from icalendar import Calendar, Event, vDDDTypes
+from icalendar import Calendar, Event
 
 
 def main():
@@ -13,9 +13,9 @@ def main():
     operation = sys.argv[1]
 
     if sys.argv[1] == '-tocsv':
-        to_csv()
+        to_csv(sys.stdout, sys.stdin)
     elif operation == '-toics':
-        to_ics()
+        to_ics(sys.stdout, sys.stdin)
 
 
 def usage():
@@ -23,10 +23,10 @@ def usage():
     sys.exit(1)
 
 
-def to_csv():
-    calendar = Calendar.from_ical(sys.stdin.read())
+def to_csv(output_file, input_file):
+    calendar = Calendar.from_ical(input_file.read())
     property_names = create_properties_map(calendar).keys()
-    write_events_to_csv(calendar, property_names)
+    write_events_to_csv(output_file, calendar, property_names)
 
 
 def create_properties_map(calendar):
@@ -44,8 +44,8 @@ def create_properties_map(calendar):
     return properties
 
 
-def write_events_to_csv(calendar, property_names):
-    writer = CSVWriter(sys.stdout)
+def write_events_to_csv(output_file, calendar, property_names):
+    writer = CSVWriter(output_file)
     writer.writerow(property_names)
     for component in calendar.walk():
         if component.name == 'VEVENT':
@@ -53,13 +53,17 @@ def write_events_to_csv(calendar, property_names):
             for property_name in property_names:
                 prop = None
                 if property_name in component:
-                    prop = component[property_name].to_ical().decode('UTF-8')
+                    obj = component[property_name]
+                    if hasattr(obj, 'to_ical'):
+                        prop = obj.to_ical().decode('UTF-8')
+                    else:
+                        prop = obj
                 props.append(prop)
             writer.writerow(props)
 
 
-def to_ics():
-    reader = DictReader(sys.stdin)
+def to_ics(output_file, input_file):
+    reader = DictReader(input_file)
     calendar = Calendar()
     calendar.add('VERSION', '2.0')
     for row in reader:
@@ -67,7 +71,7 @@ def to_ics():
         for name, value in row.items():
             event[name] = value
         calendar.add_component(event)
-    print(calendar.to_ical().replace(b'\r', b'').decode('UTF-8'))
+    output_file.write(calendar.to_ical().replace(b'\r', b'').decode('UTF-8'))
 
 
 if __name__ == '__main__':
