@@ -2,6 +2,7 @@
 
 import sys
 
+from collections import OrderedDict
 from csv import DictReader, writer as CSVWriter
 from icalendar import Calendar, Event
 
@@ -31,7 +32,7 @@ def to_csv(output_file, input_file):
         calendar = Calendar.from_ical(input_file.read())
     except ValueError as e:
         handle_parse_error(e)
-    property_names = create_properties_map(calendar).keys()
+    property_names = create_properties_list(calendar)
     write_events_to_csv(output_file, calendar, property_names)
 
 
@@ -40,13 +41,13 @@ def handle_parse_error(e):
     sys.exit(1)
 
 
-def create_properties_map(calendar):
-    properties = {}
+def create_properties_list(calendar):
+    properties = OrderedDict()
     for event in iter_events(calendar):
         for prop in iter_properties(event):
             property_name = prop[0]
-            properties[property_name] = properties.get(property_name, 0) + 1
-    return properties
+            properties[property_name] = True
+    return properties.keys()
 
 
 def iter_events(calendar):
@@ -58,7 +59,7 @@ def iter_events(calendar):
 def iter_properties(event):
     for prop in event.property_items(recursive=False):
         property_name = prop[0]
-        if property_name != 'BEGIN' and property_name != 'END':
+        if property_name not in ('BEGIN', 'END'):
             yield prop
 
 
