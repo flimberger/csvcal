@@ -116,7 +116,7 @@ def create_event(properties):
         if name == 'EXDATE' and value != '':
             event[name] = str_to_exdate_list(value)
         else:
-            event[name] = unescape(value)
+            event[name] = unescape_text(value)
     return event
 
 
@@ -143,9 +143,12 @@ def str_to_exdate_list(value):
     return exdate_list
 
 
-def unescape(value):
+def unescape_text(value):
+    value = value.replace('\\\\', '\\')
+    value = value.replace('\\n', '\n')
+    value = value.replace('\\;', ';')
     value = value.replace('\\,', ',')
-    return value.replace('\\n', '\n')
+    return value
 
 
 def convert_to_unix_line_endings(data):
