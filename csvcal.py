@@ -7,7 +7,7 @@ from icalendar import Calendar, Event
 
 
 def main():
-    if len(sys.argv) < 2:
+    if len(sys.argv) != 2:
         usage()
 
     operation = sys.argv[1]
@@ -16,10 +16,13 @@ def main():
         to_csv(sys.stdout, sys.stdin)
     elif operation == '-toics':
         to_ics(sys.stdout, sys.stdin)
+    else:
+        print('invalid argument "{}"'.format(operation), file=sys.stderr)
+        usage()
 
 
 def usage():
-    print("usage:\tcsvcal -tocsv\n\tcsvcal -toics", file=sys.stderr)
+    print('usage:\tcsvcal -tocsv\n\tcsvcal -toics', file=sys.stderr)
     sys.exit(1)
 
 
