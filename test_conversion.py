@@ -3,6 +3,16 @@ import csvcal
 from io import StringIO
 
 
+def compare_conversion(ical_data):
+    with StringIO(ical_data) as ical, StringIO() as csv_data, \
+            StringIO() as result:
+        csvcal.to_csv(csv_data, ical)
+        csv_data.seek(0)
+        csvcal.to_ics(result, csv_data)
+
+        assert result.getvalue() == ical_data
+
+
 def test_minimal():
     ical_data = """BEGIN:VCALENDAR
 VERSION:2.0
@@ -13,13 +23,7 @@ END:VEVENT
 END:VCALENDAR
 """
 
-    with StringIO(ical_data) as ical, StringIO() as csv_data, \
-            StringIO() as result:
-        csvcal.to_csv(csv_data, ical)
-        csv_data.seek(0)
-        csvcal.to_ics(result, csv_data)
-
-        assert result.getvalue() == ical_data
+    compare_conversion(ical_data)
 
 
 def test_comma_in_text():
@@ -35,10 +39,20 @@ END:VEVENT
 END:VCALENDAR
 """
 
-    with StringIO(ical_data) as ical, StringIO() as csv_data, \
-            StringIO() as result:
-        csvcal.to_csv(csv_data, ical)
-        csv_data.seek(0)
-        csvcal.to_ics(result, csv_data)
+    compare_conversion(ical_data)
 
-        assert result.getvalue() == ical_data
+
+def test_newline_in_text():
+    ical_data = """BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+SUMMARY:summary\\nsummary
+DTSTAMP:20181228T155600
+UID:261b6b0d-0ab9-11e9-b35b-507b9d43f840
+COMMENT:comment\\ncomment
+DESCRIPTION:description\\ndescription
+END:VEVENT
+END:VCALENDAR
+"""
+
+    compare_conversion(ical_data)

@@ -123,7 +123,8 @@ def check_csv(value):
 
 
 def unescape(value):
-    return value.replace('\\', '')
+    value = value.replace('\\,', ',')
+    return value.replace('\\n', '\n')
 
 
 def convert_to_unix_line_endings(data):
