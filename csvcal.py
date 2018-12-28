@@ -28,12 +28,16 @@ def usage():
 
 
 def to_csv(output_file, input_file):
-    try:
-        calendar = Calendar.from_ical(input_file.read())
-    except ValueError as e:
-        handle_parse_error(e)
+    calendar = create_calendar(input_file)
     property_names = create_properties_list(calendar)
     write_events_to_csv(output_file, calendar, property_names)
+
+
+def create_calendar(input_file):
+    try:
+        return Calendar.from_ical(input_file.read())
+    except ValueError as e:
+        handle_parse_error(e)
 
 
 def handle_parse_error(e):
@@ -43,20 +47,20 @@ def handle_parse_error(e):
 
 def create_properties_list(calendar):
     properties = OrderedDict()
-    for event in iter_events(calendar):
-        for prop in iter_properties(event):
+    for event in get_events(calendar):
+        for prop in get_properties(event):
             property_name = prop[0]
             properties[property_name] = True
     return properties.keys()
 
 
-def iter_events(calendar):
+def get_events(calendar):
     for component in calendar.walk():
         if component.name == 'VEVENT':
             yield component
 
 
-def iter_properties(event):
+def get_properties(event):
     for prop in event.property_items(recursive=False):
         property_name = prop[0]
         if property_name not in ('BEGIN', 'END'):
@@ -66,18 +70,27 @@ def iter_properties(event):
 def write_events_to_csv(output_file, calendar, property_names):
     writer = CSVWriter(output_file)
     writer.writerow(property_names)
-    for event in iter_events(calendar):
+    for event in get_events(calendar):
         props = []
         for property_name in property_names:
-            prop = None
-            if property_name in event:
-                obj = event[property_name]
-                if hasattr(obj, 'to_ical'):
-                    prop = obj.to_ical().decode('UTF-8')
-                else:
-                    prop = obj
-            props.append(prop)
+            property_value = get_property_value(event, property_name)
+            props.append(property_value)
         writer.writerow(props)
+
+
+def get_property_value(event, property_name):
+    prop = None
+    if property_name in event:
+        property_value = event[property_name]
+        if hasattr(property_value, 'to_ical'):
+            prop = to_ical_str(property_value)
+        else:
+            prop = str(property_value)
+    return prop
+
+
+def to_ical_str(value):
+    return value.to_ical().decode('UTF-8')
 
 
 def to_ics(output_file, input_file):
@@ -85,12 +98,17 @@ def to_ics(output_file, input_file):
     calendar = Calendar()
     calendar.add('VERSION', '2.0')
     for row in reader:
-        event = Event()
-        for name, value in row.items():
-            check_csv(value)
-            event[name] = unescape(value)
+        event = create_event(row)
         calendar.add_component(event)
-    output_file.write(calendar.to_ical().replace(b'\r', b'').decode('UTF-8'))
+    output_file.write(convert_to_unix_line_endings(to_ical_str(calendar)))
+
+
+def create_event(properties):
+    event = Event()
+    for name, value in properties.items():
+        check_csv(value)
+        event[name] = unescape(value)
+    return event
 
 
 def check_csv(value):
@@ -107,6 +125,9 @@ def check_csv(value):
 def unescape(value):
     return value.replace('\\', '')
 
+
+def convert_to_unix_line_endings(data):
+    return data.replace('\r', '')
 
 if __name__ == '__main__':
     main()
