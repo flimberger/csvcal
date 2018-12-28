@@ -5,6 +5,7 @@ import sys
 from collections import OrderedDict
 from csv import DictReader, writer as CSVWriter
 from icalendar import Calendar, Event
+from icalendar.prop import vDDDLists, vDDDTypes
 
 
 def main():
@@ -84,8 +85,11 @@ def get_property_value(event, property_name):
         property_value = event[property_name]
         if hasattr(property_value, 'to_ical'):
             prop = to_ical_str(property_value)
+        elif isinstance(property_value, list):
+            prop = ','.join([to_ical_str(item) for item in property_value])
         else:
-            prop = str(property_value)
+            raise Exception('invalid property value')
+
     return prop
 
 
@@ -107,7 +111,12 @@ def create_event(properties):
     event = Event()
     for name, value in properties.items():
         check_csv(value)
-        event[name] = unescape(value)
+        # This is a hack to make EXDATE work; it must be converted back into a
+        # list
+        if name == 'EXDATE' and value != '':
+            event[name] = str_to_exdate_list(value)
+        else:
+            event[name] = unescape(value)
     return event
 
 
@@ -120,6 +129,18 @@ def check_csv(value):
     if not isinstance(value, str):
         print('input is not valid CSV', file=sys.stderr)
         sys.exit(1)
+
+
+def str_to_exdate_list(value):
+    """This is a hack to create valid time date ranges"""
+
+    # This would create something like ``EXDATE;VALUE=DATE:yyyymmdd``.
+    # It might be what we need, or not. Currently, the other alternative below
+    # serves us better, so this is not used.
+    # exdate_list = [vDate(item) for item in vDDDLists.from_ical(value)]
+    exdate_list = [vDDDTypes(item).to_ical() for item in
+                   vDDDLists.from_ical(value)]
+    return exdate_list
 
 
 def unescape(value):

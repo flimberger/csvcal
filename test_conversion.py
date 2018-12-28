@@ -56,3 +56,18 @@ END:VCALENDAR
 """
 
     compare_conversion(ical_data)
+
+
+def test_property_list():
+    ical_data = """BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+DTSTAMP:20181228T200000
+UID:4d7d5065-0adb-11e9-b35b-507b9d43f840
+EXDATE:20181228
+EXDATE:20181229
+END:VEVENT
+END:VCALENDAR
+"""
+
+    compare_conversion(ical_data)
