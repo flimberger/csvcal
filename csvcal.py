@@ -111,17 +111,18 @@ def create_event(properties):
     event = Event()
     for name, value in properties.items():
         check_csv(value)
-        # This is a hack to make EXDATE work; it must be converted back into a
-        # list
-        if name == 'EXDATE' and value != '':
-            event[name] = str_to_exdate_list(value)
-        # More hacks, this time for RRULE. We need a type system.
-        elif name == 'RRULE':
-            event[name] = create_recurrence_rule(value)
-        # Default type is assumed to be TEXT, which *should* work well with
-        # most property types.
-        else:
-            event[name] = unescape_text(value)
+        if value != '':
+            # This is a hack to make EXDATE work; it must be converted back
+            # into a list
+            if name == 'EXDATE':
+                event[name] = str_to_exdate_list(value)
+            # More hacks, this time for RRULE. We need a type system.
+            elif name == 'RRULE':
+                event[name] = create_recurrence_rule(value)
+            # Default type is assumed to be TEXT, which *should* work well with
+            # most property types.
+            else:
+                event[name] = unescape_text(value)
     return event
 
 
