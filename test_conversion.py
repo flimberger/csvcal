@@ -55,3 +55,17 @@ END:VCALENDAR
 """
 
     compare_conversion(ical_data)
+
+
+def test_rrule_content():
+    ical_data = """BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+DTSTAMP:20181229T000200
+UID:20d6385e-0afd-11e9-b35b-507b9d43f840
+RRULE:FREQ=WEEKLY;UNTIL=20190731T220000Z;INTERVAL=4;BYDAY=MO,TU,TH,FR
+END:VEVENT
+END:VCALENDAR
+"""
+
+    compare_conversion(ical_data)

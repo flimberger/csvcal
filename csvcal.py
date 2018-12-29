@@ -5,7 +5,7 @@ import sys
 from collections import OrderedDict
 from csv import DictReader, writer as CSVWriter
 from icalendar import Calendar, Event
-from icalendar.prop import vDDDLists, vDDDTypes
+from icalendar.prop import vDDDLists, vDDDTypes, vRecur
 
 
 def main():
@@ -115,6 +115,11 @@ def create_event(properties):
         # list
         if name == 'EXDATE' and value != '':
             event[name] = str_to_exdate_list(value)
+        # More hacks, this time for RRULE. We need a type system.
+        elif name == 'RRULE':
+            event[name] = create_recurrence_rule(value)
+        # Default type is assumed to be TEXT, which *should* work well with
+        # most property types.
         else:
             event[name] = unescape_text(value)
     return event
@@ -141,6 +146,12 @@ def str_to_exdate_list(value):
     exdate_list = [vDDDTypes(item).to_ical() for item in
                    vDDDLists.from_ical(value)]
     return exdate_list
+
+
+def create_recurrence_rule(value):
+    # The icalendar library is seriously broken, why would I create values like
+    # this?!
+    return vRecur(vRecur.from_ical(value))
 
 
 def unescape_text(value):
